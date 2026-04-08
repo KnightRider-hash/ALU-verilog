@@ -22,30 +22,48 @@
 
 module ALU_n_bit
 #(parameter n=31)
-(input [n:0] A,
-input [n:0] B,
-input [2:0] OP,
-output reg z,c,
-output reg [n:0] out
+(input  [n:0] A,
+ input  [n:0] B,
+ input  [3:0] OP,
+ output reg   z,
+ output reg   c,
+ output reg   negative,
+ output reg   [n:0] out
 );
-always@(*)begin
-c=1'b0;
-case(OP)
-3'b000:{c,out}=A+B;
-        
-3'b001: begin
-        out= A-B;
-        c=(A<B);
-        end
-3'b010: out= A*B;
-3'b011: out= (A==0||B==0)?0:A/B;
-3'b100: out= A&B;
-3'b101: out= A|B;
-3'b110: out= A^B;
-3'b111: out= ~A;
-default:out=0;
-endcase 
-z=1'b0;
-z=(out==0)?1'b1:1'b0;
+
+always@(*) begin
+    c        = 1'b0;
+    negative = 1'b0;
+
+    case(OP)
+        4'b0000: {c, out} = A + B;                          // ADD
+
+        4'b0001: begin                                       // SUB
+                 out = A - B;
+                 c   = (A < B);
+                 end
+
+        4'b0010: out = A & B;                               // AND
+
+        4'b0011: out = A | B;                               // OR
+
+        4'b0100: out = A ^ B;                               // XOR
+
+        4'b0101: out = A << B[4:0];                         // SLL  logical shift left
+
+        4'b0110: out = A >> B[4:0];                         // SRL  logical shift right
+
+        4'b0111: out = $signed(A) >>> B[4:0];               // SRA  arithmetic shift right
+
+        4'b1000: out = ($signed(A) < $signed(B)) ? 1 : 0;  // SLT  signed less than
+
+        4'b1001: out = (A < B) ? 1 : 0;                    // SLTU unsigned less than
+
+        default: out = 0;
+    endcase
+
+    z        = (out == 0) ? 1'b1 : 1'b0;
+    negative = out[n];
 end
+
 endmodule
