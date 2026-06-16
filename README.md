@@ -1,3 +1,5 @@
+> **⚠️ NOTE: This repository has been archived. This module has been successfully integrated into a complete 32-bit RISC-V CPU. Please see the master project here: [RV32I-Single-Cycle-Core](https://github.com/KnightRider-hash/RV32I-Single-Cycle-Core)**
+
 # N-Bit Parameterized ALU with Automated Testbench #
 
 This project features a parameterized N-bit Arithmetic Logic Unit (ALU) implemented in Verilog.
