@@ -1,73 +1,69 @@
 `timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 28.01.2026 22:30:39
+// Design Name: 
+// Module Name: ALU_n_bit
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
 
-module alu_tb_32bit();
 
-    reg  [31:0] a;
-    reg  [31:0] b;
-    reg  [3:0]  op;     
-    wire [31:0] o;
-    wire Z, C, N;         // added N: ALU_n_bit also exposes `negative`, unlike ALU_2_bit
+module ALU_2_bit
+#(parameter n=31)
+(input  [n:0] A,
+ input  [n:0] B,
+ input  [3:0] OP,
+ output reg   z,
+ output reg   c,
+ output reg   negative,
+ output reg   [n:0] out
+);
 
-    ALU_2_bit #(.n(31)) dut (.A(a), .B(b), .OP(op), .z(Z), .c(C), .negative(N), .out(o));
+always@(*) begin
+    c        = 1'b0;
+    negative = 1'b0;
 
-    reg [31:0] e;
-    reg z1, c1, n1;
+    case(OP)
+        4'b0000: {c, out} = A + B;                          // ADD
 
-    initial begin
-       $dumpfile("waveform.vcd");
-       $dumpvars(0,alu_tb_32bit);
+        4'b0001: begin                                       // SUB
+                 out = A - B;
+                 c   = (A < B);
+                 end
 
-        $display("started checking");
+        4'b0010: out = A & B;                               // AND
 
-        // ---- Group 1: A = 0xFFFFFFFF, B = 0xFFFFFFFF ----
-        a = 32'hFFFFFFFF; b = 32'hFFFFFFFF;
+        4'b0011: out = A | B;                               // OR
 
-        op=4'b0000; e=32'hFFFFFFFE; z1=1'b0; c1=1'b1; n1=1'b1; ce(); // ADD
-        #5 op=4'b0001; e=32'h00000000; z1=1'b1; c1=1'b0; n1=1'b0; ce(); // SUB
-        #5 op=4'b0010; e=32'hFFFFFFFF; z1=1'b0; c1=1'b0; n1=1'b1; ce(); // AND
-        #5 op=4'b0011; e=32'hFFFFFFFF; z1=1'b0; c1=1'b0; n1=1'b1; ce(); // OR
-        #5 op=4'b0100; e=32'h00000000; z1=1'b1; c1=1'b0; n1=1'b0; ce(); // XOR
-        #5 op=4'b0101; e=32'h80000000; z1=1'b0; c1=1'b0; n1=1'b1; ce(); // SLL (shamt=B[4:0]=31)
-        #5 op=4'b0110; e=32'h00000001; z1=1'b0; c1=1'b0; n1=1'b0; ce(); // SRL (shamt=31)
-        #5 op=4'b0111; e=32'hFFFFFFFF; z1=1'b0; c1=1'b0; n1=1'b1; ce(); // SRA (shamt=31)
-        #5 op=4'b1000; e=32'h00000000; z1=1'b1; c1=1'b0; n1=1'b0; ce(); // SLT  (-1 < -1 ? no)
-        #5 op=4'b1001; e=32'h00000000; z1=1'b1; c1=1'b0; n1=1'b0; ce(); // SLTU (equal -> no)
+        4'b0100: out = A ^ B;                               // XOR
 
-        // ---- Group 2: A = 0x00000002, B = 0x00000001 ----
-        #5 a = 32'h00000002; b = 32'h00000001;
+        4'b0101: out = A << B[4:0];                         // SLL  logical shift left
 
-        op=4'b0000; e=32'h00000003; z1=1'b0; c1=1'b0; n1=1'b0; ce(); // ADD
-        #5 op=4'b0001; e=32'h00000001; z1=1'b0; c1=1'b0; n1=1'b0; ce(); // SUB
-        #5 op=4'b0010; e=32'h00000000; z1=1'b1; c1=1'b0; n1=1'b0; ce(); // AND
-        #5 op=4'b0011; e=32'h00000003; z1=1'b0; c1=1'b0; n1=1'b0; ce(); // OR
-        #5 op=4'b0100; e=32'h00000003; z1=1'b0; c1=1'b0; n1=1'b0; ce(); // XOR
-        #5 op=4'b0101; e=32'h00000004; z1=1'b0; c1=1'b0; n1=1'b0; ce(); // SLL (shamt=1)
-        #5 op=4'b0110; e=32'h00000001; z1=1'b0; c1=1'b0; n1=1'b0; ce(); // SRL (shamt=1)
-        #5 op=4'b0111; e=32'h00000001; z1=1'b0; c1=1'b0; n1=1'b0; ce(); // SRA (shamt=1)
-        #5 op=4'b1000; e=32'h00000000; z1=1'b1; c1=1'b0; n1=1'b0; ce(); // SLT  (2<1? no)
-        #5 op=4'b1001; e=32'h00000000; z1=1'b1; c1=1'b0; n1=1'b0; ce(); // SLTU (2<1? no)
+        4'b0110: out = A >> B[4:0];                         // SRL  logical shift right
 
-        // ---- Group 3: A = 0x80000000 (min negative), B = 0x00000001 ----
-        #5 a = 32'h80000000; b = 32'h00000001;
+        4'b0111: out = $signed(A) >>> B[4:0];               // SRA  arithmetic shift right
 
-        op=4'b0000; e=32'h80000001; z1=1'b0; c1=1'b0; n1=1'b1; ce(); // ADD
-        #5 op=4'b0001; e=32'h7FFFFFFF; z1=1'b0; c1=1'b0; n1=1'b0; ce(); // SUB (A<B? unsigned no -> c=0)
-        #5 op=4'b0111; e=32'hC0000000; z1=1'b0; c1=1'b0; n1=1'b1; ce(); // SRA sign-extend
-        #5 op=4'b1000; e=32'h00000001; z1=1'b0; c1=1'b0; n1=1'b0; ce(); // SLT  (min_neg < 1 signed? yes)
-        #5 op=4'b1001; e=32'h00000000; z1=1'b1; c1=1'b0; n1=1'b0; ce(); // SLTU (0x80000000 < 1 unsigned? no)
+        4'b1000: out = ($signed(A) < $signed(B)) ? 1 : 0;  // SLT  signed less than
 
-        $display("stop checking!");
-        $finish;
-    end
+        4'b1001: out = (A < B) ? 1 : 0;                    // SLTU unsigned less than
 
-    task ce;
-        #1
-        if (o!==e || c1!==C || z1!==Z || n1!==N)
-            $display(
-                "ERROR @t=%0t | A=%h B=%h OP=%b | OUT=%h Z=%b C=%b N=%b | EXP=%h Z=%b C=%b N=%b",
-                $time, a, b, op, o, Z, C, N, e, z1, c1, n1);
-        else
-            $display("working");
-    endtask
+        default: out = 0;
+    endcase
+
+    z        = (out == 0) ? 1'b1 : 1'b0;
+    negative = out[n];
+end
 
 endmodule
